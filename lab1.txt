@@ -1,0 +1,108 @@
+CREATE TABLE DEPARTMENTS(
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR2(50) NOT NULL,
+    manager_id INT,
+    location_id INT
+);
+
+CREATE TABLE EMPLOYEES (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    email VARCHAR2(100) NOT NULL,
+    phone_number INT,
+    hire_date DATE,
+    job_id INT,
+    salary INT,
+    commision_pct INT,
+    manager_id INT,
+    department_id INT
+);
+
+CREATE TABLE LOCATIONS (
+    location_id INT PRIMARY KEY,
+    street_address VARCHAR2(100)
+);
+
+CREATE TABLE COUNTRIES (
+    country_id INT PRIMARY KEY,
+    country_name VARCHAR2(50),
+    region_id INT
+);
+
+CREATE TABLE REGIONS (
+    region_id INT PRIMARY KEY,
+    region_name VARCHAR2(50)
+);
+
+CREATE TABLE JOB_HISTORY (
+    employee_id INT,
+    start_date DATE,
+    end_date DATE,
+    job_id INT,
+    department_id INT,
+    PRIMARY KEY(employee_id, start_date)
+);
+
+CREATE TABLE JOBS (
+    job_id INT PRIMARY KEY,
+    job_title VARCHAR2(50),
+    min_salary NUMBER,
+    max_salary NUMBER,
+    
+    CONSTRAINT salary_diff
+    CHECK (max_salary >= min_salary + 2000)
+);
+
+
+ALTER TABLE LOCATIONS ADD (
+    postal_code VARCHAR2(12),
+    city VARCHAR2(50) NOT NULL,
+    state_province VARCHAR2(50),
+    country_id INT
+);
+
+ALTER TABLE COUNTRIES
+ADD CONSTRAINT fk_countries_regions
+FOREIGN KEY (region_id)
+REFERENCES REGIONS(region_id);
+
+ALTER TABLE DEPARTMENTS
+ADD CONSTRAINT fk_departments_locations
+FOREIGN KEY (location_id)
+REFERENCES LOCATIONS(location_id);
+
+ALTER TABLE EMPLOYEES
+ADD CONSTRAINT fk_employees_departments
+FOREIGN KEY (department_id)
+REFERENCES DEPARTMENTS(department_id);
+
+ALTER TABLE EMPLOYEES
+ADD CONSTRAINT fk_employees_manager
+FOREIGN KEY (manager_id)
+REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE DEPARTMENTS
+ADD CONSTRAINT fk_departments_manager
+FOREIGN KEY (manager_id)
+REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE EMPLOYEES
+ADD CONSTRAINT fk_employees_jobs
+FOREIGN KEY (job_id)
+REFERENCES JOBS(job_id);
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_jh_employee
+FOREIGN KEY (employee_id)
+REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_jh_jobs
+FOREIGN KEY (job_id)
+REFERENCES JOBS(job_id);
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_jh_department
+FOREIGN KEY (department_id)
+REFERENCES DEPARTMENTS(department_id);
