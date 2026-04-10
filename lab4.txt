@@ -1,0 +1,92 @@
+  /* IV zadanie 1*/
+ CREATE VIEW v_wysokie_pensje AS
+SELECT *
+FROM EMPLOYEES
+WHERE SALARY > 6000;
+  
+ /* IV zadanie 2*/
+ 
+CREATE OR REPLACE VIEW v_wysokie_pensje AS
+SELECT *
+FROM EMPLOYEES
+WHERE SALARY > 12000;
+ 
+  /* IV zadanie 3*/
+  
+DROP VIEW v_wysokie_pensje;
+  
+ /* IV zadanie 4*/
+ 
+CREATE VIEW v_finance_pracownicy AS
+SELECT e.employee_id,
+       e.last_name,
+       e.first_name
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d
+  ON e.department_id = d.department_id
+WHERE d.department_name = 'Finance';
+ 
+ /* IV zadanie 5*/
+ 
+CREATE VIEW v_srednie_pensje AS
+SELECT employee_id,
+       last_name,
+       first_name,
+       salary,
+       job_id,
+       email,
+       hire_date
+FROM EMPLOYEES
+WHERE SALARY BETWEEN 5000 AND 12000;
+
+/* IV zadanie 6*/
+
+INSERT INTO v_srednie_pensje
+(employee_id, last_name, first_name, salary, job_id, email, hire_date)
+VALUES (999, 'Nowak', 'Jan', 8000, 'IT_PROG', 'jan.nowak@mail.com', SYSDATE);
+ 
+/* IV zadanie 7*/
+CREATE VIEW v_statystyka_dzialow AS
+SELECT d.department_id,
+       d.department_name,
+       COUNT(e.employee_id) AS liczba_pracownikow,
+       AVG(e.salary) AS srednia_pensja,
+       MAX(e.salary) AS najwyzsza_pensja
+FROM DEPARTMENTS d
+JOIN EMPLOYEES e
+  ON d.department_id = e.department_id
+GROUP BY d.department_id, d.department_name
+HAVING COUNT(e.employee_id) >= 4;
+
+/* IV zadanie 8*/
+
+CREATE VIEW v_srednie_pensje_check AS
+SELECT employee_id,
+       last_name,
+       first_name,
+       salary,
+       job_id,
+       email,
+       hire_date
+FROM EMPLOYEES
+WHERE SALARY BETWEEN 5000 AND 12000
+WITH CHECK OPTION;
+   
+/* IV zadanie 9*/
+
+CREATE MATERIALIZED VIEW v_managerowie
+BUILD IMMEDIATE
+REFRESH COMPLETE ON DEMAND
+AS
+SELECT e.employee_id,
+       e.first_name,
+       e.last_name,
+       d.department_name
+FROM EMPLOYEES e
+JOIN DEPARTMENTS d
+  ON e.department_id = d.department_id
+WHERE e.employee_id IN (
+    SELECT DISTINCT manager_id
+    FROM EMPLOYEES
+    WHERE manager_id IS NOT NULL
+);
