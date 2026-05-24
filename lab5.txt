@@ -1,0 +1,171 @@
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_numer_max departments.department_id%TYPE;
+    v_nowy_id departments.department_id%TYPE;
+
+    v_nazwa_nowego departments.department_name%TYPE := 'EDUCATION'; 
+BEGIN
+    SELECT MAX(department_id) INTO v_numer_max FROM departments;
+    v_nowy_id := v_numer_max + 10;
+    INSERT INTO departments (department_id, department_name) 
+    VALUES (v_nowy_id, v_nazwa_nowego);
+
+    COMMIT;
+END;
+
+DECLARE
+    v_numer_max departments.department_id%TYPE;
+    v_nowy_id departments.department_id%TYPE;
+    v_nazwa_nowego departments.department_name%TYPE := 'EDUCATION'; 
+BEGIN
+    SELECT MAX(department_id) INTO v_numer_max FROM departments;
+    v_nowy_id := v_numer_max + 10;
+    
+    INSERT INTO departments (department_id, department_name) 
+    VALUES (v_nowy_id, v_nazwa_nowego);
+    
+    UPDATE departments 
+    SET location_id = 3000 
+    WHERE department_id = v_nowy_id;    
+    COMMIT;
+END;
+
+CREATE TABLE nowa (
+    wartosc VARCHAR2(20)
+);
+
+BEGIN
+    FOR i IN 1..10 LOOP
+        IF i NOT IN (4, 6) THEN
+            INSERT INTO nowa (wartosc) VALUES (TO_CHAR(i));
+        END IF;
+    END LOOP;
+    COMMIT;
+END;
+
+DECLARE
+    v_kraj countries%ROWTYPE; 
+BEGIN
+    SELECT * INTO v_kraj 
+    FROM countries 
+    WHERE country_id = 'CA';
+    
+    DBMS_OUTPUT.PUT_LINE('Nazwa kraju: ' || v_kraj.country_name);
+    DBMS_OUTPUT.PUT_LINE('ID Regionu: ' || v_kraj.region_id);
+END;
+
+DECLARE
+    -- Zadeklarowanie kursora
+    CURSOR c_pracownicy IS
+        SELECT salary, last_name 
+        FROM employees 
+        WHERE department_id = 50;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Raport podwyżek dla departamentu 50 ---');
+
+    FOR r_pracownik IN c_pracownicy LOOP
+        IF r_pracownik.salary > 3100 THEN
+            DBMS_OUTPUT.PUT_LINE(r_pracownik.last_name || ': nie dawać podwyżki');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE(r_pracownik.last_name || ': dać podwyżkę');
+        END IF;
+    END LOOP;
+END;
+
+DECLARE
+    CURSOR c_param_pracownicy (p_min_sal NUMBER, p_max_sal NUMBER, p_czesc_imienia VARCHAR2) IS
+        SELECT salary, first_name, last_name
+        FROM employees
+        WHERE salary BETWEEN p_min_sal AND p_max_sal
+          AND UPPER(first_name) LIKE '%' || UPPER(p_czesc_imienia) || '%';
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Pracownicy 1000-5000 (imię zawiera "a" lub "A") ---');
+    FOR r IN c_param_pracownicy(1000, 5000, 'a') LOOP
+        DBMS_OUTPUT.PUT_LINE(r.first_name || ' ' || r.last_name || ' zarabia: ' || r.salary);
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(' ');
+
+    DBMS_OUTPUT.PUT_LINE('--- Pracownicy 5000-20000 (imię zawiera "u" lub "U") ---');
+    FOR r IN c_param_pracownicy(5000, 20000, 'u') LOOP
+        DBMS_OUTPUT.PUT_LINE(r.first_name || ' ' || r.last_name || ' zarabia: ' || r.salary);
+    END LOOP;
+END;
+/
+CREATE OR REPLACE PROCEDURE dodaj_prace(
+    p_job_id IN jobs.job_id%TYPE,
+    p_job_title IN jobs.job_title%TYPE
+)
+IS
+BEGIN
+    INSERT INTO jobs (job_id, job_title) 
+    VALUES (p_job_id, p_job_title);
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Sukces: Dodano nowe stanowisko (' || p_job_id || ').');
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd podczas dodawania: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+EXECUTE dodaj_prace('IT_GURU', 'IT Guru Specialist');
+/
+
+CREATE OR REPLACE PROCEDURE modyfikuj_prace(
+    p_job_id IN jobs.job_id%TYPE,
+    p_nowy_tytul IN jobs.job_title%TYPE
+)
+IS
+    e_brak_zmian EXCEPTION;
+BEGIN
+    UPDATE jobs 
+    SET job_title = p_nowy_tytul 
+    WHERE job_id = p_job_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE e_brak_zmian;
+    END IF;
+    
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Sukces: Zaktualizowano stanowisko.');
+EXCEPTION
+    WHEN e_brak_zmian THEN
+        DBMS_OUTPUT.PUT_LINE('Błąd logiki: Nie zmodyfikowano żadnego stanowiska (Podane ID nie istnieje).');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił inny błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+EXECUTE modyfikuj_prace('IT_GURU', 'Senior IT Guru Specialist');
+
+EXECUTE modyfikuj_prace('NIE_MA_MNIE', 'Cos Nowego');
+/
+
+CREATE OR REPLACE PROCEDURE usun_prace(
+    p_job_id IN jobs.job_id%TYPE
+)
+IS
+    e_brak_usuniecia EXCEPTION;
+BEGIN
+    DELETE FROM jobs 
+    WHERE job_id = p_job_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE e_brak_usuniecia;
+    END IF;
+    
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Sukces: Usunięto stanowisko o ID ' || p_job_id);
+EXCEPTION
+    WHEN e_brak_usuniecia THEN
+        DBMS_OUTPUT.PUT_LINE('Błąd logiki: Stanowisko do usunięcia nie istnieje.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił krytyczny błąd usuwania: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+EXECUTE usun_prace('IT_GURU');
